@@ -127,10 +127,15 @@ def generate_clinics(rng: random.Random) -> list[dict]:
             clinic_id += 1
             opened = date(2020, 1, 1) + timedelta(days=rng.randint(0, 365))
 
-            # PLANTED: renamed clinic
+            # PLANTED: renamed clinic — "Riverside" was renamed to "Riverside East"
+            # Old record keeps original clinic_id with is_current=FALSE.
+            # New record gets a NEW clinic_id with is_current=TRUE.
+            # Patients registered before the rename still reference the OLD clinic_id.
+            # This means an INNER JOIN with is_current=TRUE will drop those patients.
             if city == "Riverside":
+                old_clinic_id = clinic_id
                 clinics.append({
-                    "clinic_id": clinic_id,
+                    "clinic_id": old_clinic_id,
                     "clinic_name": "Riverside",
                     "city": "Riverside",
                     "state": "CA",
@@ -141,6 +146,7 @@ def generate_clinics(rng: random.Random) -> list[dict]:
                     "renamed_to": "Riverside East",
                     "updated_at": "2024-06-15T00:00:00",
                 })
+                clinic_id += 1  # New ID for the renamed clinic
                 clinics.append({
                     "clinic_id": clinic_id,
                     "clinic_name": "Riverside East",
@@ -271,6 +277,14 @@ def generate_patients(
     patient_id = 5000
     active_clinic_ids = [c["clinic_id"] for c in clinics if c["is_current"]]
 
+    # PLANTED: Include old (renamed/inactive) clinic IDs in the pool.
+    # ~5% of patients will reference the old Riverside clinic_id (is_current=FALSE).
+    # This causes the silver INNER JOIN + is_current=TRUE filter to drop them.
+    all_clinic_ids = [c["clinic_id"] for c in clinics]
+    inactive_clinic_ids = [
+        c["clinic_id"] for c in clinics if not c["is_current"]
+    ]
+
     for i in range(1, 1901):
         patient_id += 1
         owner = rng.choice(owners)
@@ -289,7 +303,11 @@ def generate_patients(
             birth_date + timedelta(days=rng.randint(30, 365)),
             date(2020, 6, 1),
         )
-        clinic_id = rng.choice(active_clinic_ids)
+        # ~5% of patients assigned to inactive (renamed) clinics
+        if rng.random() < 0.05 and inactive_clinic_ids:
+            clinic_id = rng.choice(inactive_clinic_ids)
+        else:
+            clinic_id = rng.choice(active_clinic_ids)
         insurance = rng.choice(INSURANCE_PROVIDERS)
 
         patients.append({
@@ -527,15 +545,25 @@ def generate_referrals(
 
         referrals.extend(stages)
 
-    # PLANTED: backwards transitions
+    # PLANTED: backwards transitions — swap stage_entered_at and stage_exited_at
+    # so that stage_entered_at > stage_exited_at, producing negative days_in_stage.
+    # Also change the stage label to create impossible funnel orderings.
     n_backwards = int(len(referrals) * 0.10)
-    backwards_indices = rng.sample(range(len(referrals)), min(n_backwards, len(referrals)))
+    candidates = [
+        i for i, r in enumerate(referrals) if r["stage_exited_at"] is not None
+    ]
+    backwards_indices = rng.sample(candidates, min(n_backwards, len(candidates)))
     for idx in backwards_indices:
         current_stage = referrals[idx]["stage"]
         current_order = FUNNEL_STAGE_ORDER[current_stage]
         if current_order > 0:
             backwards_stage = FUNNEL_STAGES[rng.randint(0, current_order - 1)]
             referrals[idx]["stage"] = backwards_stage
+        # Swap entered/exited dates to produce negative days_in_stage
+        entered = referrals[idx]["stage_entered_at"]
+        exited = referrals[idx]["stage_exited_at"]
+        referrals[idx]["stage_entered_at"] = exited
+        referrals[idx]["stage_exited_at"] = entered
 
     return referrals
 
