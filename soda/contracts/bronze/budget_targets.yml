@@ -1,0 +1,37 @@
+dataset: bronze.vet_budget_target
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+
+  - name: year
+    data_type: integer
+    checks:
+      - missing:
+          name: year is always populated
+
+  - name: month
+    data_type: integer
+    checks:
+      - missing:
+          name: month is always populated
+
+  - name: target_revenue
+    data_type: double
+    checks:
+      - missing:
+          name: target_revenue is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 100 budget target records
+      threshold:
+        must_be_greater_than: 100

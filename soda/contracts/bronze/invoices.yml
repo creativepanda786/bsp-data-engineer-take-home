@@ -1,0 +1,37 @@
+dataset: bronze.vet_invoice
+
+columns:
+  - name: invoice_id
+    data_type: integer
+    checks:
+      - missing:
+          name: invoice_id is always populated
+
+  - name: appointment_id
+    data_type: integer
+    checks:
+      - missing:
+          name: appointment_id is always populated
+
+  - name: amount
+    data_type: double
+    checks:
+      - missing:
+          name: amount is always populated
+
+  - name: invoice_date
+    data_type: date
+    checks:
+      - missing:
+          name: invoice_date is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 4000 invoice records
+      threshold:
+        must_be_greater_than: 4000

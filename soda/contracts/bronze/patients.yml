@@ -1,0 +1,43 @@
+dataset: bronze.vet_patient
+
+columns:
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+
+  - name: owner_id
+    data_type: integer
+    checks:
+      - missing:
+          name: owner_id is always populated
+
+  - name: patient_name
+    data_type: varchar
+    checks:
+      - missing:
+          name: patient_name is always populated
+
+  - name: species
+    data_type: varchar
+    checks:
+      - missing:
+          name: species is always populated
+
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 1500 patient records
+      threshold:
+        must_be_greater_than: 1500

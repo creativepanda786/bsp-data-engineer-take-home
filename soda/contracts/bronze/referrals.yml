@@ -1,0 +1,37 @@
+dataset: bronze.vet_referral
+
+columns:
+  - name: referral_id
+    data_type: integer
+    checks:
+      - missing:
+          name: referral_id is always populated
+
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+
+  - name: stage
+    data_type: varchar
+    checks:
+      - missing:
+          name: stage is always populated
+
+  - name: stage_entered_at
+    data_type: timestamp
+    checks:
+      - missing:
+          name: stage_entered_at is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 500 referral stage records
+      threshold:
+        must_be_greater_than: 500

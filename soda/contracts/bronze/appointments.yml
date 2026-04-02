@@ -1,0 +1,43 @@
+dataset: bronze.vet_appointment
+
+columns:
+  - name: appointment_id
+    data_type: integer
+    checks:
+      - missing:
+          name: appointment_id is always populated
+
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+
+  - name: appointment_date
+    data_type: date
+    checks:
+      - missing:
+          name: appointment_date is always populated
+
+  - name: status
+    data_type: varchar
+    checks:
+      - missing:
+          name: status is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 5000 appointment records
+      threshold:
+        must_be_greater_than: 5000

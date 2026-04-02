@@ -1,0 +1,31 @@
+dataset: bronze.vet_provider
+
+columns:
+  - name: provider_id
+    data_type: integer
+    checks:
+      - missing:
+          name: provider_id is always populated
+
+  - name: full_name
+    data_type: varchar
+    checks:
+      - missing:
+          name: full_name is always populated
+
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+
+  - row_count:
+      name: At least 30 provider records
+      threshold:
+        must_be_greater_than: 30
