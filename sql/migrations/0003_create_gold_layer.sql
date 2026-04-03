@@ -379,25 +379,44 @@ LEFT JOIN gold.ref_core_budget_target b
 ORDER BY a.revenue_month_date, dc.clinic_id;
 
 -- Req 4: Provider utilization weekly
+-- BUG FIX: is_below_threshold was COUNT(*) < 15 at service-code grain (max 4/row)
+-- so every row was always TRUE. Fixed by aggregating total weekly appointments per
+-- provider across all service types first, then applying the threshold.
 CREATE OR REPLACE VIEW gold.v_ops_provider_utilization_weekly AS
+WITH weekly_by_service AS (
+    SELECT
+        dp.provider_id, dp.full_name AS provider_name, dp.credentials, dp.specialty,
+        dc.clinic_id, dc.clinic_name, dc.area AS clinic_area,
+        DATE_TRUNC('week', f.appointment_documented_date) AS week_start_date,
+        f.service_code, f.service_name,
+        COUNT(*)                                           AS total_appointments,
+        SUM(CASE WHEN f.is_completed THEN 1 ELSE 0 END)   AS completed_appointments,
+        SUM(COALESCE(f.duration_minutes, 0))               AS total_minutes
+    FROM gold.fact_clin_appointment f
+    JOIN gold.dim_clin_provider dp ON f.provider_id = dp.provider_id AND dp.is_current = TRUE
+    JOIN gold.dim_core_clinic   dc ON f.clinic_id   = dc.clinic_id   AND dc.is_current = TRUE
+    WHERE f.appointment_documented_date IS NOT NULL
+    GROUP BY dp.provider_id, dp.full_name, dp.credentials, dp.specialty,
+             dc.clinic_id, dc.clinic_name, dc.area,
+             DATE_TRUNC('week', f.appointment_documented_date),
+             f.service_code, f.service_name
+),
+weekly_totals AS (
+    SELECT provider_id, week_start_date,
+           SUM(total_appointments) AS weekly_total_appointments
+    FROM weekly_by_service
+    GROUP BY provider_id, week_start_date
+)
 SELECT
-    dp.provider_id, dp.full_name AS provider_name, dp.credentials, dp.specialty,
-    dc.clinic_id, dc.clinic_name, dc.area AS clinic_area,
-    DATE_TRUNC('week', f.appointment_documented_date) AS week_start_date,
-    f.service_code, f.service_name,
-    COUNT(*)                                           AS total_appointments,
-    SUM(CASE WHEN f.is_completed THEN 1 ELSE 0 END)   AS completed_appointments,
-    SUM(COALESCE(f.duration_minutes, 0))               AS total_minutes,
-    COUNT(*) < 15                                      AS is_below_threshold
-FROM gold.fact_clin_appointment f
-JOIN gold.dim_clin_provider dp ON f.provider_id = dp.provider_id AND dp.is_current = TRUE
-JOIN gold.dim_core_clinic   dc ON f.clinic_id   = dc.clinic_id   AND dc.is_current = TRUE
-WHERE f.appointment_documented_date IS NOT NULL
-GROUP BY dp.provider_id, dp.full_name, dp.credentials, dp.specialty,
-         dc.clinic_id, dc.clinic_name, dc.area,
-         DATE_TRUNC('week', f.appointment_documented_date),
-         f.service_code, f.service_name
-ORDER BY week_start_date, dp.provider_id;
+    s.provider_id, s.provider_name, s.credentials, s.specialty,
+    s.clinic_id, s.clinic_name, s.clinic_area,
+    s.week_start_date, s.service_code, s.service_name,
+    s.total_appointments, s.completed_appointments, s.total_minutes,
+    t.weekly_total_appointments < 15 AS is_below_threshold
+FROM weekly_by_service s
+JOIN weekly_totals t
+    ON s.provider_id = t.provider_id AND s.week_start_date = t.week_start_date
+ORDER BY s.week_start_date, s.provider_id;
 
 -- Req 5: Duplicate patient detection
 CREATE OR REPLACE VIEW gold.v_clin_duplicate_patients_exceptions AS
