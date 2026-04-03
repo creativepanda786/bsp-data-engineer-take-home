@@ -38,10 +38,10 @@ SELECT
     area,
     CAST(opened_date AS DATE) AS opened_date,
     CAST(closed_date AS DATE) AS closed_date,
-    COALESCE(is_current, TRUE) AS is_current,
+    COALESCE(vc.is_current, TRUE) AS is_current,
     renamed_to,
     updated_at
-FROM bronze.vet_clinic
+FROM bronze.vet_clinic vc
 """
 
 STG_VET_PATIENT_SQL = """
