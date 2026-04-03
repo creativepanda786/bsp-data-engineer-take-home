@@ -13,18 +13,18 @@ columns:
   - name: state
     data_type: varchar
   - name: week_start_date
-    data_type: timestamp
+    data_type: date
     checks:
       - missing:
           name: week_start_date is always populated
   - name: total_appointments
     data_type: bigint
   - name: completed_appointments
-    data_type: bigint
+    data_type: hugeint
   - name: cancelled_appointments
-    data_type: bigint
+    data_type: hugeint
   - name: no_show_appointments
-    data_type: bigint
+    data_type: hugeint
   - name: completion_rate
     data_type: double
   - name: cancellation_rate
@@ -42,12 +42,8 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Completion rate is between 0 and 1
+      name: Data quality checks
       query: |
         SELECT * FROM gold.agg_clin_clinic_weekly
-        WHERE completion_rate < 0 OR completion_rate > 1
-  - failed_rows:
-      name: Sub-counts never exceed total appointments
-      query: |
-        SELECT * FROM gold.agg_clin_clinic_weekly
-        WHERE completed_appointments + cancelled_appointments + no_show_appointments > total_appointments
+        WHERE (completion_rate < 0 OR completion_rate > 1)
+           OR (completed_appointments + cancelled_appointments + no_show_appointments > total_appointments)
