@@ -1,0 +1,81 @@
+dataset: pawsfirst/silver/stg_vet_appointment
+
+columns:
+  - name: appointment_id
+    data_type: integer
+    checks:
+      - missing:
+          name: appointment_id is always populated
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+  - name: provider_id
+    data_type: integer
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: service_code
+    data_type: varchar
+  - name: service_name
+    data_type: varchar
+  - name: service_fee
+    data_type: double
+  - name: appointment_documented_date
+    data_type: date
+  - name: scheduled_at
+    data_type: timestamp
+  - name: status
+    data_type: varchar
+  - name: duration_minutes
+    data_type: integer
+  - name: is_completed
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_completed is never NULL (bug fix verified)
+  - name: is_cancelled
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_cancelled is never NULL (bug fix verified)
+  - name: is_no_show
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_no_show is never NULL (bug fix verified)
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least 6000 appointment records
+      threshold:
+        must_be_greater_than_or_equal: 6000
+  - failed_rows:
+      name: Status flag consistency and dedup integrity
+      query: |
+        SELECT 'duplicate appointment_id' AS reason, appointment_id::varchar AS id
+        FROM silver.stg_vet_appointment
+        GROUP BY appointment_id HAVING COUNT(*) > 1
+        UNION ALL
+        SELECT 'is_completed flag mismatch' AS reason, appointment_id::varchar AS id
+        FROM silver.stg_vet_appointment
+        WHERE is_completed = TRUE AND status != 'completed'
+        UNION ALL
+        SELECT 'is_cancelled flag mismatch' AS reason, appointment_id::varchar AS id
+        FROM silver.stg_vet_appointment
+        WHERE is_cancelled = TRUE AND status != 'cancelled'
+        UNION ALL
+        SELECT 'is_no_show flag mismatch' AS reason, appointment_id::varchar AS id
+        FROM silver.stg_vet_appointment
+        WHERE is_no_show = TRUE AND status != 'no_show'

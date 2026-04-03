@@ -1,0 +1,68 @@
+dataset: pawsfirst/silver/stg_vet_patient
+
+columns:
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+  - name: owner_id
+    data_type: integer
+    checks:
+      - missing:
+          name: owner_id is always populated
+  - name: patient_name
+    data_type: varchar
+    checks:
+      - missing:
+          name: patient_name is always populated
+  - name: species
+    data_type: varchar
+    checks:
+      - missing:
+          name: species is always populated
+  - name: breed
+    data_type: varchar
+  - name: date_of_birth
+    data_type: date
+  - name: sex
+    data_type: varchar
+  - name: weight_lbs
+    data_type: double
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: insurance_provider
+    data_type: varchar
+  - name: registration_date
+    data_type: date
+  - name: is_active
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_active is always populated
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: All 2000 patients retained after LEFT JOIN fix
+      threshold:
+        must_be_greater_than_or_equal: 2000
+  - failed_rows:
+      name: patient_id is unique
+      query: |
+        SELECT patient_id, COUNT(*) FROM silver.stg_vet_patient
+        GROUP BY patient_id HAVING COUNT(*) > 1

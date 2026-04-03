@@ -1,0 +1,50 @@
+dataset: pawsfirst/silver/stg_vet_clinic
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+    checks:
+      - missing:
+          name: clinic_name is always populated
+  - name: city
+    data_type: varchar
+  - name: state
+    data_type: varchar
+  - name: area
+    data_type: varchar
+  - name: opened_date
+    data_type: date
+    checks:
+      - missing:
+          name: opened_date is always populated
+  - name: closed_date
+    data_type: date
+  - name: is_current
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_current is always populated
+  - name: renamed_to
+    data_type: varchar
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one clinic record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: clinic_id is unique
+      query: |
+        SELECT clinic_id, COUNT(*) FROM silver.stg_vet_clinic
+        GROUP BY clinic_id HAVING COUNT(*) > 1

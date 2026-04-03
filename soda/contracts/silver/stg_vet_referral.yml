@@ -1,0 +1,68 @@
+dataset: pawsfirst/silver/stg_vet_referral
+
+columns:
+  - name: referral_id
+    data_type: integer
+    checks:
+      - missing:
+          name: referral_id is always populated
+  - name: patient_id
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: referral_source
+    data_type: varchar
+  - name: stage
+    data_type: varchar
+    checks:
+      - missing:
+          name: stage is always populated
+  - name: stage_entered_at
+    data_type: timestamp
+    checks:
+      - missing:
+          name: stage_entered_at is always populated
+  - name: stage_exited_at
+    data_type: timestamp
+  - name: days_in_stage
+    data_type: integer
+  - name: is_invalid_transition
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_invalid_transition is never NULL (bug fix verified)
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least 3000 referral stage records
+      threshold:
+        must_be_greater_than_or_equal: 3000
+  - failed_rows:
+      name: Invalid transition and days_in_stage integrity
+      query: |
+        SELECT 'negative days_in_stage' AS reason, referral_id::varchar AS id
+        FROM silver.stg_vet_referral
+        WHERE days_in_stage IS NOT NULL AND days_in_stage < 0
+        UNION ALL
+        SELECT 'exited before entered' AS reason, referral_id::varchar AS id
+        FROM silver.stg_vet_referral
+        WHERE stage_exited_at IS NOT NULL
+          AND stage_exited_at < stage_entered_at
+        UNION ALL
+        SELECT 'invalid_transition not flagged' AS reason, referral_id::varchar AS id
+        FROM silver.stg_vet_referral
+        WHERE is_invalid_transition IS NULL
