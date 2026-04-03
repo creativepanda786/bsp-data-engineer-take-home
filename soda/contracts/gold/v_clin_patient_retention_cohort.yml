@@ -1,0 +1,63 @@
+dataset: pawsfirst/gold/v_clin_patient_retention_cohort
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: cohort_month
+    data_type: timestamp
+    checks:
+      - missing:
+          name: cohort_month is always populated
+  - name: cohort_year
+    data_type: double
+  - name: cohort_month_num
+    data_type: double
+  - name: referral_source
+    data_type: varchar
+  - name: cohort_size
+    data_type: bigint
+    checks:
+      - missing:
+          name: cohort_size is always populated
+  - name: retained_30d
+    data_type: bigint
+  - name: retained_60d
+    data_type: bigint
+  - name: retained_90d
+    data_type: bigint
+  - name: retention_rate_30d
+    data_type: double
+  - name: retention_rate_60d
+    data_type: double
+  - name: retention_rate_90d
+    data_type: double
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one cohort row
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Retained counts never exceed cohort size
+      query: |
+        SELECT * FROM gold.v_clin_patient_retention_cohort
+        WHERE retained_30d > cohort_size
+           OR retained_60d > cohort_size
+           OR retained_90d > cohort_size
+  - failed_rows:
+      name: Retention is monotonically non-decreasing
+      query: |
+        SELECT * FROM gold.v_clin_patient_retention_cohort
+        WHERE retained_30d > retained_60d
+           OR retained_60d > retained_90d

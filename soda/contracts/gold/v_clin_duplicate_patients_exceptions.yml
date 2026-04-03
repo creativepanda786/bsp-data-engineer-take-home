@@ -1,0 +1,44 @@
+dataset: pawsfirst/gold/v_clin_duplicate_patients_exceptions
+
+columns:
+  - name: patient_id_a
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id_a is always populated
+  - name: patient_id_b
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id_b is always populated
+  - name: patient_name
+    data_type: varchar
+  - name: species
+    data_type: varchar
+  - name: date_of_birth
+    data_type: date
+  - name: clinic_id_a
+    data_type: integer
+  - name: clinic_id_b
+    data_type: integer
+  - name: match_reason
+    data_type: varchar
+    checks:
+      - missing:
+          name: match_reason is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - failed_rows:
+      name: No patient matched against itself
+      query: |
+        SELECT * FROM gold.v_clin_duplicate_patients_exceptions
+        WHERE patient_id_a = patient_id_b
+  - failed_rows:
+      name: match_reason is always a known value
+      query: |
+        SELECT * FROM gold.v_clin_duplicate_patients_exceptions
+        WHERE match_reason NOT IN ('same_name_species_dob', 'same_owner_phone')

@@ -1,4 +1,4 @@
-dataset: bronze.vet_invoice
+dataset: pawsfirst/bronze/vet_invoice
 
 columns:
   - name: invoice_id

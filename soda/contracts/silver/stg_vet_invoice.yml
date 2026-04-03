@@ -1,0 +1,57 @@
+dataset: stg_vet_invoice
+schema: silver
+
+columns:
+  - name: invoice_id
+    data_type: INTEGER
+  - name: appointment_id
+    data_type: INTEGER
+  - name: patient_id
+    data_type: INTEGER
+  - name: clinic_id
+    data_type: INTEGER
+  - name: service_code
+    data_type: VARCHAR
+  - name: amount
+    data_type: DOUBLE
+  - name: payment_type
+    data_type: VARCHAR
+  - name: insurance_paid
+    data_type: DOUBLE
+  - name: patient_paid
+    data_type: DOUBLE
+  - name: invoice_documented_date
+    data_type: DATE
+  - name: invoice_paid_date
+    data_type: DATE
+  - name: status
+    data_type: VARCHAR
+  - name: is_paid
+    data_type: BOOLEAN
+  - name: is_outstanding
+    data_type: BOOLEAN
+  - name: is_partial
+    data_type: BOOLEAN
+  - name: has_insurance_payment
+    data_type: BOOLEAN
+  - name: collection_rate
+    data_type: DOUBLE
+  - name: created_at
+    data_type: TIMESTAMP
+  - name: updated_at
+    data_type: TIMESTAMP
+
+checks:
+  - row_count > 0
+  - missing_count(invoice_id) = 0
+  - missing_count(clinic_id) = 0
+  - missing_count(amount) = 0
+  - invalid_count(amount) = 0:
+      valid_min: 0
+  - invalid_count(collection_rate) = 0:
+      valid_min: 0
+      valid_max: 1
+  - failed_rows(invalid_status):
+      fail_query: |
+        SELECT * FROM silver.stg_vet_invoice
+        WHERE status NOT IN ('paid', 'partial', 'outstanding')

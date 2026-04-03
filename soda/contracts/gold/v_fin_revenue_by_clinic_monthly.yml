@@ -1,0 +1,61 @@
+dataset: pawsfirst/gold/v_fin_revenue_by_clinic_monthly
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: revenue_month_date
+    data_type: timestamp
+    checks:
+      - missing:
+          name: revenue_month_date is always populated
+  - name: year
+    data_type: double
+  - name: month
+    data_type: double
+  - name: total_invoiced
+    data_type: double
+  - name: total_insurance_paid
+    data_type: double
+  - name: total_patient_paid
+    data_type: double
+  - name: total_collected
+    data_type: double
+  - name: collection_rate
+    data_type: double
+  - name: insurance_invoice_count
+    data_type: bigint
+  - name: self_pay_invoice_count
+    data_type: bigint
+  - name: target_revenue
+    data_type: double
+  - name: revenue_vs_budget
+    data_type: double
+  - name: revenue_vs_budget_pct
+    data_type: double
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one revenue row
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Revenue is never negative
+      query: |
+        SELECT * FROM gold.v_fin_revenue_by_clinic_monthly
+        WHERE total_invoiced < 0 OR total_collected < 0
+  - failed_rows:
+      name: Collection rate is between 0 and 1
+      query: |
+        SELECT * FROM gold.v_fin_revenue_by_clinic_monthly
+        WHERE collection_rate < 0 OR collection_rate > 1

@@ -1,0 +1,53 @@
+dataset: pawsfirst/gold/agg_clin_clinic_weekly
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: state
+    data_type: varchar
+  - name: week_start_date
+    data_type: timestamp
+    checks:
+      - missing:
+          name: week_start_date is always populated
+  - name: total_appointments
+    data_type: bigint
+  - name: completed_appointments
+    data_type: bigint
+  - name: cancelled_appointments
+    data_type: bigint
+  - name: no_show_appointments
+    data_type: bigint
+  - name: completion_rate
+    data_type: double
+  - name: cancellation_rate
+    data_type: double
+  - name: no_show_rate
+    data_type: double
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one weekly clinic row
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Completion rate is between 0 and 1
+      query: |
+        SELECT * FROM gold.agg_clin_clinic_weekly
+        WHERE completion_rate < 0 OR completion_rate > 1
+  - failed_rows:
+      name: Sub-counts never exceed total appointments
+      query: |
+        SELECT * FROM gold.agg_clin_clinic_weekly
+        WHERE completed_appointments + cancelled_appointments + no_show_appointments > total_appointments

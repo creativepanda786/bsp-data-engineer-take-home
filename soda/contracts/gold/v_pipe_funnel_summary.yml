@@ -1,0 +1,64 @@
+dataset: pawsfirst/gold/v_pipe_funnel_summary
+
+columns:
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: funnel_month_date
+    data_type: timestamp
+    checks:
+      - missing:
+          name: funnel_month_date is always populated
+  - name: year
+    data_type: double
+  - name: month
+    data_type: double
+  - name: referral_source
+    data_type: varchar
+    checks:
+      - missing:
+          name: referral_source is always populated
+  - name: inquiry_count
+    data_type: bigint
+  - name: consultation_count
+    data_type: bigint
+  - name: registered_count
+    data_type: bigint
+  - name: active_count
+    data_type: bigint
+  - name: inquiry_to_consultation_rate
+    data_type: double
+  - name: consultation_to_registered_rate
+    data_type: double
+  - name: registered_to_active_rate
+    data_type: double
+  - name: overall_conversion_rate
+    data_type: double
+  - name: median_days_inquiry
+    data_type: double
+  - name: median_days_consultation
+    data_type: double
+  - name: median_days_registered
+    data_type: double
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one funnel row
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Overall conversion rate is between 0 and 1
+      query: |
+        SELECT * FROM gold.v_pipe_funnel_summary
+        WHERE overall_conversion_rate < 0
+           OR overall_conversion_rate > 1

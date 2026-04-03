@@ -1,0 +1,88 @@
+dataset: pawsfirst/gold/fact_fin_invoice
+
+columns:
+  - name: invoice_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: invoice_sk is always populated
+      - duplicate:
+          name: invoice_sk is unique
+  - name: invoice_id
+    data_type: integer
+    checks:
+      - missing:
+          name: invoice_id is always populated
+      - duplicate:
+          name: invoice_id is unique
+  - name: appointment_id
+    data_type: integer
+  - name: patient_sk
+    data_type: varchar
+  - name: patient_id
+    data_type: integer
+  - name: clinic_sk
+    data_type: varchar
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: service_code
+    data_type: varchar
+  - name: amount
+    data_type: double
+    checks:
+      - missing:
+          name: amount is always populated
+  - name: insurance_paid
+    data_type: double
+  - name: patient_paid
+    data_type: double
+  - name: payment_type
+    data_type: varchar
+  - name: invoice_documented_date
+    data_type: date
+  - name: invoice_paid_date
+    data_type: date
+  - name: status
+    data_type: varchar
+  - name: is_paid
+    data_type: boolean
+  - name: is_outstanding
+    data_type: boolean
+  - name: is_partial
+    data_type: boolean
+  - name: has_insurance_payment
+    data_type: boolean
+  - name: collection_rate
+    data_type: double
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one invoice record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Status is always a known value
+      query: |
+        SELECT * FROM gold.fact_fin_invoice
+        WHERE status NOT IN ('paid', 'partial', 'outstanding')
+  - failed_rows:
+      name: Amount is never negative
+      query: |
+        SELECT * FROM gold.fact_fin_invoice
+        WHERE amount < 0
+  - failed_rows:
+      name: Collection rate is between 0 and 1
+      query: |
+        SELECT * FROM gold.fact_fin_invoice
+        WHERE collection_rate < 0 OR collection_rate > 1

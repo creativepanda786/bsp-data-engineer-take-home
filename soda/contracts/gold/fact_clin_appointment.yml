@@ -1,0 +1,87 @@
+dataset: pawsfirst/gold/fact_clin_appointment
+
+columns:
+  - name: appointment_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: appointment_sk is always populated
+      - duplicate:
+          name: appointment_sk is unique
+  - name: appointment_id
+    data_type: integer
+    checks:
+      - missing:
+          name: appointment_id is always populated
+      - duplicate:
+          name: appointment_id is unique
+  - name: patient_sk
+    data_type: varchar
+  - name: patient_id
+    data_type: integer
+  - name: provider_sk
+    data_type: varchar
+  - name: provider_id
+    data_type: integer
+  - name: clinic_sk
+    data_type: varchar
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: service_code
+    data_type: varchar
+  - name: service_name
+    data_type: varchar
+  - name: service_fee
+    data_type: double
+  - name: appointment_scheduled_at
+    data_type: timestamp
+  - name: appointment_documented_date
+    data_type: date
+  - name: status
+    data_type: varchar
+  - name: duration_minutes
+    data_type: integer
+  - name: is_completed
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_completed is always populated
+  - name: is_cancelled
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_cancelled is always populated
+  - name: is_no_show
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_no_show is always populated
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one appointment record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Status is always a known value
+      query: |
+        SELECT * FROM gold.fact_clin_appointment
+        WHERE status NOT IN ('completed', 'cancelled', 'no_show', 'scheduled')
+  - failed_rows:
+      name: Status flags match status column
+      query: |
+        SELECT * FROM gold.fact_clin_appointment
+        WHERE (is_completed = TRUE AND status != 'completed')
+           OR (is_cancelled = TRUE AND status != 'cancelled')
+           OR (is_no_show  = TRUE AND status != 'no_show')

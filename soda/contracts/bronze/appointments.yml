@@ -1,4 +1,4 @@
-dataset: bronze.vet_appointment
+dataset: pawsfirst/bronze/vet_appointment
 
 columns:
   - name: appointment_id

@@ -1,0 +1,70 @@
+dataset: pawsfirst/gold/dim_clin_provider
+
+columns:
+  - name: provider_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: provider_sk is always populated
+      - duplicate:
+          name: provider_sk is unique
+  - name: provider_id
+    data_type: integer
+    checks:
+      - missing:
+          name: provider_id is always populated
+  - name: full_name
+    data_type: varchar
+  - name: first_name
+    data_type: varchar
+  - name: last_name
+    data_type: varchar
+  - name: credentials
+    data_type: varchar
+  - name: specialty
+    data_type: varchar
+  - name: clinic_id
+    data_type: integer
+  - name: hire_date
+    data_type: date
+  - name: termination_date
+    data_type: date
+  - name: is_active
+    data_type: boolean
+  - name: is_currently_active
+    data_type: boolean
+  - name: effective_start
+    data_type: timestamp
+    checks:
+      - missing:
+          name: effective_start is always populated
+  - name: effective_end
+    data_type: timestamp
+  - name: is_current
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_current is always populated
+  - name: row_hash
+    data_type: varchar
+    checks:
+      - missing:
+          name: row_hash is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one provider record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Each provider has exactly one current row
+      query: |
+        SELECT provider_id, COUNT(*) AS cnt
+        FROM gold.dim_clin_provider
+        WHERE is_current = TRUE
+        GROUP BY provider_id
+        HAVING COUNT(*) > 1

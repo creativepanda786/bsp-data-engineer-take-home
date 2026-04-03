@@ -1,4 +1,4 @@
-dataset: bronze.vet_budget_target
+dataset: pawsfirst/bronze/vet_budget_target
 
 columns:
   - name: clinic_id

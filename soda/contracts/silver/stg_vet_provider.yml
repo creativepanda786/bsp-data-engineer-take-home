@@ -1,0 +1,39 @@
+dataset: stg_vet_provider
+schema: silver
+
+columns:
+  - name: provider_id
+    data_type: INTEGER
+  - name: first_name
+    data_type: VARCHAR
+  - name: last_name
+    data_type: VARCHAR
+  - name: full_name
+    data_type: VARCHAR
+  - name: credentials
+    data_type: VARCHAR
+  - name: specialty
+    data_type: VARCHAR
+  - name: clinic_id
+    data_type: INTEGER
+  - name: clinic_name
+    data_type: VARCHAR
+  - name: clinic_area
+    data_type: VARCHAR
+  - name: hire_date
+    data_type: DATE
+  - name: termination_date
+    data_type: DATE
+  - name: is_active
+    data_type: BOOLEAN
+  - name: is_currently_active
+    data_type: BOOLEAN
+  - name: updated_at
+    data_type: TIMESTAMP
+
+checks:
+  - row_count > 0
+  - missing_count(provider_id) = 0
+  - missing_count(full_name) = 0
+  - missing_count(specialty) = 0
+  - missing_count(clinic_id) = 0

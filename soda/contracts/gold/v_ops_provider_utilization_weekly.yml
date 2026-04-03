@@ -1,0 +1,55 @@
+dataset: pawsfirst/gold/v_ops_provider_utilization_weekly
+
+columns:
+  - name: provider_id
+    data_type: integer
+    checks:
+      - missing:
+          name: provider_id is always populated
+  - name: provider_name
+    data_type: varchar
+  - name: credentials
+    data_type: varchar
+  - name: specialty
+    data_type: varchar
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: clinic_area
+    data_type: varchar
+  - name: week_start_date
+    data_type: timestamp
+    checks:
+      - missing:
+          name: week_start_date is always populated
+  - name: service_code
+    data_type: varchar
+  - name: service_name
+    data_type: varchar
+  - name: total_appointments
+    data_type: bigint
+  - name: completed_appointments
+    data_type: bigint
+  - name: total_minutes
+    data_type: bigint
+  - name: is_below_threshold
+    data_type: boolean
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one provider utilization row
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Total minutes is never negative
+      query: |
+        SELECT * FROM gold.v_ops_provider_utilization_weekly
+        WHERE total_minutes < 0

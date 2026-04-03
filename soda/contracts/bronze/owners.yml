@@ -1,4 +1,4 @@
-dataset: bronze.vet_owner
+dataset: pawsfirst/bronze/vet_owner
 
 columns:
   - name: owner_id

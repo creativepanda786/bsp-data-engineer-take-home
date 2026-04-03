@@ -1,0 +1,76 @@
+dataset: pawsfirst/gold/fact_pipe_referral_stage
+
+columns:
+  - name: referral_stage_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: referral_stage_sk is always populated
+      - duplicate:
+          name: referral_stage_sk is unique
+  - name: referral_id
+    data_type: integer
+    checks:
+      - missing:
+          name: referral_id is always populated
+  - name: patient_sk
+    data_type: varchar
+  - name: patient_id
+    data_type: integer
+  - name: clinic_sk
+    data_type: varchar
+  - name: clinic_id
+    data_type: integer
+  - name: referral_source
+    data_type: varchar
+  - name: stage
+    data_type: varchar
+    checks:
+      - missing:
+          name: stage is always populated
+  - name: stage_sort_order
+    data_type: integer
+  - name: stage_entered_at
+    data_type: timestamp
+    checks:
+      - missing:
+          name: stage_entered_at is always populated
+  - name: stage_exited_at
+    data_type: timestamp
+  - name: days_in_stage
+    data_type: integer
+  - name: is_invalid_transition
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_invalid_transition is always populated
+  - name: created_at
+    data_type: timestamp
+  - name: updated_at
+    data_type: timestamp
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one referral stage record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: Stage is always a known funnel value
+      query: |
+        SELECT * FROM gold.fact_pipe_referral_stage
+        WHERE stage NOT IN ('inquiry','consultation','registered','active','churned')
+  - failed_rows:
+      name: days_in_stage is never negative
+      query: |
+        SELECT * FROM gold.fact_pipe_referral_stage
+        WHERE days_in_stage < 0
+  - failed_rows:
+      name: stage_exited_at is never before stage_entered_at
+      query: |
+        SELECT * FROM gold.fact_pipe_referral_stage
+        WHERE stage_exited_at IS NOT NULL
+          AND stage_exited_at < stage_entered_at

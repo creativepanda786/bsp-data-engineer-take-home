@@ -1,4 +1,4 @@
-dataset: bronze.vet_patient
+dataset: pawsfirst/bronze/vet_patient
 
 columns:
   - name: patient_id

@@ -1,4 +1,4 @@
-dataset: bronze.vet_referral
+dataset: pawsfirst/bronze/vet_referral
 
 columns:
   - name: referral_id

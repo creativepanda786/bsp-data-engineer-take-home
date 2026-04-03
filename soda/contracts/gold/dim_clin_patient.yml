@@ -1,0 +1,69 @@
+dataset: pawsfirst/gold/dim_core_clinic
+
+columns:
+  - name: clinic_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: clinic_sk is always populated
+  - name: clinic_id
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
+  - name: clinic_name
+    data_type: varchar
+  - name: city
+    data_type: varchar
+  - name: state
+    data_type: varchar
+  - name: area
+    data_type: varchar
+  - name: opened_date
+    data_type: date
+  - name: closed_date
+    data_type: date
+  - name: renamed_to
+    data_type: varchar
+  - name: effective_start
+    data_type: timestamp
+    checks:
+      - missing:
+          name: effective_start is always populated
+  - name: effective_end
+    data_type: timestamp
+  - name: is_current
+    data_type: boolean
+    checks:
+      - missing:
+          name: is_current is always populated
+  - name: row_hash
+    data_type: varchar
+    checks:
+      - missing:
+          name: row_hash is always populated
+
+checks:
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one clinic record
+      threshold:
+        must_be_greater_than: 0
+  - name: clinic_sk
+    data_type: varchar
+    checks:
+      - missing:
+          name: clinic_sk is always populated
+      - duplicate:
+          name: clinic_sk is unique
+  - failed_rows:
+      name: Each clinic has exactly one current row
+      fail_query: |
+        SELECT clinic_id, COUNT(*) AS cnt
+        FROM gold.dim_core_clinic
+        WHERE is_current = TRUE
+        GROUP BY clinic_id
+        HAVING COUNT(*) > 1

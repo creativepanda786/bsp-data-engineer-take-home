@@ -1,4 +1,4 @@
-dataset: bronze.vet_provider
+dataset: pawsfirst/bronze/vet_provider
 
 columns:
   - name: provider_id

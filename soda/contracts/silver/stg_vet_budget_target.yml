@@ -1,0 +1,32 @@
+dataset: stg_vet_budget_target
+schema: silver
+
+columns:
+  - name: clinic_id
+    data_type: INTEGER
+  - name: clinic_name
+    data_type: VARCHAR
+  - name: clinic_area
+    data_type: VARCHAR
+  - name: year
+    data_type: INTEGER
+  - name: month
+    data_type: INTEGER
+  - name: budget_month_date
+    data_type: DATE
+  - name: target_revenue
+    data_type: DOUBLE
+  - name: target_appointments
+    data_type: INTEGER
+  - name: target_new_patients
+    data_type: INTEGER
+
+checks:
+  - row_count = 144
+  - missing_count(clinic_id) = 0
+  - missing_count(target_revenue) = 0
+  - invalid_count(month) = 0:
+      valid_min: 1
+      valid_max: 12
+  - invalid_count(target_revenue) = 0:
+      valid_min: 0

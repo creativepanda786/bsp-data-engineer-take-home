@@ -1,0 +1,4 @@
+name: pawsfirst
+type: duckdb
+connection:
+  database: data/pawsfirst.duckdb
