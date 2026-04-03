@@ -1,32 +1,41 @@
-dataset: stg_vet_budget_target
-schema: silver
+dataset: pawsfirst/silver/stg_vet_budget_target
 
 columns:
   - name: clinic_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
   - name: clinic_name
-    data_type: VARCHAR
-  - name: clinic_area
-    data_type: VARCHAR
+    data_type: varchar
   - name: year
-    data_type: INTEGER
+    data_type: integer
   - name: month
-    data_type: INTEGER
-  - name: budget_month_date
-    data_type: DATE
+    data_type: integer
   - name: target_revenue
-    data_type: DOUBLE
+    data_type: double
+    checks:
+      - missing:
+          name: target_revenue is always populated
   - name: target_appointments
-    data_type: INTEGER
+    data_type: integer
   - name: target_new_patients
-    data_type: INTEGER
+    data_type: integer
 
 checks:
-  - row_count = 144
-  - missing_count(clinic_id) = 0
-  - missing_count(target_revenue) = 0
-  - invalid_count(month) = 0:
-      valid_min: 1
-      valid_max: 12
-  - invalid_count(target_revenue) = 0:
-      valid_min: 0
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: Exactly 144 budget rows
+      threshold:
+        must_be: 144
+  - failed_rows:
+      name: Business rule violations
+      query: |
+        SELECT 'month out of range' AS reason, * FROM silver.stg_vet_budget_target
+        WHERE month < 1 OR month > 12
+        UNION ALL
+        SELECT 'negative target revenue' AS reason, * FROM silver.stg_vet_budget_target
+        WHERE target_revenue < 0

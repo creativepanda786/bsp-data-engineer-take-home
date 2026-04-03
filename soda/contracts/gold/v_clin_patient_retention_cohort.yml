@@ -11,14 +11,14 @@ columns:
   - name: clinic_area
     data_type: varchar
   - name: cohort_month
-    data_type: timestamp
+    data_type: date
     checks:
       - missing:
           name: cohort_month is always populated
   - name: cohort_year
-    data_type: double
+    data_type: bigint
   - name: cohort_month_num
-    data_type: double
+    data_type: bigint
   - name: referral_source
     data_type: varchar
   - name: cohort_size
@@ -49,15 +49,11 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Retained counts never exceed cohort size
+      name: Data quality checks
       query: |
         SELECT * FROM gold.v_clin_patient_retention_cohort
         WHERE retained_30d > cohort_size
            OR retained_60d > cohort_size
            OR retained_90d > cohort_size
-  - failed_rows:
-      name: Retention is monotonically non-decreasing
-      query: |
-        SELECT * FROM gold.v_clin_patient_retention_cohort
-        WHERE retained_30d > retained_60d
+           OR retained_30d > retained_60d
            OR retained_60d > retained_90d

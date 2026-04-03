@@ -59,18 +59,9 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Stage is always a known funnel value
+      name: Data quality checks
       query: |
         SELECT * FROM gold.fact_pipe_referral_stage
         WHERE stage NOT IN ('inquiry','consultation','registered','active','churned')
-  - failed_rows:
-      name: days_in_stage is never negative
-      query: |
-        SELECT * FROM gold.fact_pipe_referral_stage
-        WHERE days_in_stage < 0
-  - failed_rows:
-      name: stage_exited_at is never before stage_entered_at
-      query: |
-        SELECT * FROM gold.fact_pipe_referral_stage
-        WHERE stage_exited_at IS NOT NULL
-          AND stage_exited_at < stage_entered_at
+           OR days_in_stage < 0
+           OR (stage_exited_at IS NOT NULL AND stage_exited_at < stage_entered_at)

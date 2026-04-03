@@ -72,17 +72,9 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Status is always a known value
+      name: Data quality checks
       query: |
         SELECT * FROM gold.fact_fin_invoice
         WHERE status NOT IN ('paid', 'partial', 'outstanding')
-  - failed_rows:
-      name: Amount is never negative
-      query: |
-        SELECT * FROM gold.fact_fin_invoice
-        WHERE amount < 0
-  - failed_rows:
-      name: Collection rate is between 0 and 1
-      query: |
-        SELECT * FROM gold.fact_fin_invoice
-        WHERE collection_rate < 0 OR collection_rate > 1
+           OR amount < 0
+           OR (collection_rate < 0 OR collection_rate > 1)

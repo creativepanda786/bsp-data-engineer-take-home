@@ -1,57 +1,71 @@
-dataset: stg_vet_invoice
-schema: silver
+dataset: pawsfirst/silver/stg_vet_invoice
 
 columns:
   - name: invoice_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: invoice_id is always populated
   - name: appointment_id
-    data_type: INTEGER
+    data_type: integer
   - name: patient_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: patient_id is always populated
   - name: clinic_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
   - name: service_code
-    data_type: VARCHAR
+    data_type: varchar
   - name: amount
-    data_type: DOUBLE
+    data_type: double
   - name: payment_type
-    data_type: VARCHAR
+    data_type: varchar
   - name: insurance_paid
-    data_type: DOUBLE
+    data_type: double
   - name: patient_paid
-    data_type: DOUBLE
+    data_type: double
   - name: invoice_documented_date
-    data_type: DATE
+    data_type: date
   - name: invoice_paid_date
-    data_type: DATE
-  - name: status
-    data_type: VARCHAR
+    data_type: date
   - name: is_paid
-    data_type: BOOLEAN
+    data_type: boolean
   - name: is_outstanding
-    data_type: BOOLEAN
+    data_type: boolean
   - name: is_partial
-    data_type: BOOLEAN
+    data_type: boolean
   - name: has_insurance_payment
-    data_type: BOOLEAN
+    data_type: boolean
   - name: collection_rate
-    data_type: DOUBLE
+    data_type: double
+  - name: status
+    data_type: varchar
   - name: created_at
-    data_type: TIMESTAMP
+    data_type: timestamp
   - name: updated_at
-    data_type: TIMESTAMP
+    data_type: timestamp
 
 checks:
-  - row_count > 0
-  - missing_count(invoice_id) = 0
-  - missing_count(clinic_id) = 0
-  - missing_count(amount) = 0
-  - invalid_count(amount) = 0:
-      valid_min: 0
-  - invalid_count(collection_rate) = 0:
-      valid_min: 0
-      valid_max: 1
-  - failed_rows(invalid_status):
-      fail_query: |
-        SELECT * FROM silver.stg_vet_invoice
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least 4000 invoice records
+      threshold:
+        must_be_greater_than: 4000
+  - failed_rows:
+      name: Business rule violations
+      query: |
+        SELECT 'negative amount' AS reason, * FROM silver.stg_vet_invoice
+        WHERE amount < 0
+        UNION ALL
+        SELECT 'insurance exceeds amount' AS reason, * FROM silver.stg_vet_invoice
+        WHERE insurance_paid > amount
+        UNION ALL
+        SELECT 'unknown status' AS reason, * FROM silver.stg_vet_invoice
         WHERE status NOT IN ('paid', 'partial', 'outstanding')

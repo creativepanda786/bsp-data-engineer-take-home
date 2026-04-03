@@ -22,7 +22,7 @@ columns:
   - name: clinic_area
     data_type: varchar
   - name: week_start_date
-    data_type: timestamp
+    data_type: date
     checks:
       - missing:
           name: week_start_date is always populated
@@ -33,9 +33,9 @@ columns:
   - name: total_appointments
     data_type: bigint
   - name: completed_appointments
-    data_type: bigint
+    data_type: hugeint
   - name: total_minutes
-    data_type: bigint
+    data_type: hugeint
   - name: is_below_threshold
     data_type: boolean
 

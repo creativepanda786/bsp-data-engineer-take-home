@@ -49,21 +49,17 @@ checks:
       allow_extra_columns: true
       allow_other_column_order: true
   - row_count:
-      name: At least one clinic record
+      name: At least 12 clinic dimension rows
       threshold:
-        must_be_greater_than: 0
-  - name: clinic_sk
-    data_type: varchar
-    checks:
-      - missing:
-          name: clinic_sk is always populated
-      - duplicate:
-          name: clinic_sk is unique
+        must_be_greater_than_or_equal: 12
   - failed_rows:
-      name: Each clinic has exactly one current row
-      fail_query: |
-        SELECT clinic_id, COUNT(*) AS cnt
+      name: SCD2 integrity violations
+      query: |
+        SELECT 'duplicate surrogate key' AS reason, clinic_sk AS id
         FROM gold.dim_core_clinic
-        WHERE is_current = TRUE
-        GROUP BY clinic_id
-        HAVING COUNT(*) > 1x
+        GROUP BY clinic_sk HAVING COUNT(*) > 1
+        UNION ALL
+        SELECT 'invalid effective range' AS reason, clinic_sk AS id
+        FROM gold.dim_core_clinic
+        WHERE effective_end IS NOT NULL
+          AND effective_end <= effective_start

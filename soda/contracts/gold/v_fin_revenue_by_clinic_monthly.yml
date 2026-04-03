@@ -11,14 +11,14 @@ columns:
   - name: clinic_area
     data_type: varchar
   - name: revenue_month_date
-    data_type: timestamp
+    data_type: date
     checks:
       - missing:
           name: revenue_month_date is always populated
   - name: year
-    data_type: double
+    data_type: bigint
   - name: month
-    data_type: double
+    data_type: bigint
   - name: total_invoiced
     data_type: double
   - name: total_insurance_paid
@@ -50,12 +50,8 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Revenue is never negative
+      name: Data quality checks
       query: |
         SELECT * FROM gold.v_fin_revenue_by_clinic_monthly
-        WHERE total_invoiced < 0 OR total_collected < 0
-  - failed_rows:
-      name: Collection rate is between 0 and 1
-      query: |
-        SELECT * FROM gold.v_fin_revenue_by_clinic_monthly
-        WHERE collection_rate < 0 OR collection_rate > 1
+        WHERE (total_invoiced < 0 OR total_collected < 0)
+           OR (collection_rate < 0 OR collection_rate > 1)

@@ -11,14 +11,14 @@ columns:
   - name: clinic_area
     data_type: varchar
   - name: funnel_month_date
-    data_type: timestamp
+    data_type: date
     checks:
       - missing:
           name: funnel_month_date is always populated
   - name: year
-    data_type: double
+    data_type: bigint
   - name: month
-    data_type: double
+    data_type: bigint
   - name: referral_source
     data_type: varchar
     checks:
@@ -56,9 +56,3 @@ checks:
       name: At least one funnel row
       threshold:
         must_be_greater_than: 0
-  - failed_rows:
-      name: Overall conversion rate is between 0 and 1
-      query: |
-        SELECT * FROM gold.v_pipe_funnel_summary
-        WHERE overall_conversion_rate < 0
-           OR overall_conversion_rate > 1

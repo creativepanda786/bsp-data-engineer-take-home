@@ -39,12 +39,8 @@ checks:
       threshold:
         must_be: 144
   - failed_rows:
-      name: Month is always between 1 and 12
+      name: Data quality checks
       query: |
         SELECT * FROM gold.ref_core_budget_target
-        WHERE month < 1 OR month > 12
-  - failed_rows:
-      name: Target revenue is never negative
-      query: |
-        SELECT * FROM gold.ref_core_budget_target
-        WHERE target_revenue < 0
+        WHERE (month < 1 OR month > 12)
+           OR (target_revenue < 0)

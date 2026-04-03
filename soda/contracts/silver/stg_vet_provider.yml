@@ -1,39 +1,58 @@
-dataset: stg_vet_provider
-schema: silver
+dataset: pawsfirst/silver/stg_vet_provider
 
 columns:
   - name: provider_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: provider_id is always populated
   - name: first_name
-    data_type: VARCHAR
+    data_type: varchar
   - name: last_name
-    data_type: VARCHAR
+    data_type: varchar
   - name: full_name
-    data_type: VARCHAR
+    data_type: varchar
+    checks:
+      - missing:
+          name: full_name is always populated
   - name: credentials
-    data_type: VARCHAR
+    data_type: varchar
   - name: specialty
-    data_type: VARCHAR
+    data_type: varchar
+    checks:
+      - missing:
+          name: specialty is always populated
   - name: clinic_id
-    data_type: INTEGER
+    data_type: integer
+    checks:
+      - missing:
+          name: clinic_id is always populated
   - name: clinic_name
-    data_type: VARCHAR
+    data_type: varchar
   - name: clinic_area
-    data_type: VARCHAR
+    data_type: varchar
   - name: hire_date
-    data_type: DATE
+    data_type: date
   - name: termination_date
-    data_type: DATE
+    data_type: date
   - name: is_active
-    data_type: BOOLEAN
+    data_type: boolean
   - name: is_currently_active
-    data_type: BOOLEAN
+    data_type: boolean
   - name: updated_at
-    data_type: TIMESTAMP
+    data_type: timestamp
 
 checks:
-  - row_count > 0
-  - missing_count(provider_id) = 0
-  - missing_count(full_name) = 0
-  - missing_count(specialty) = 0
-  - missing_count(clinic_id) = 0
+  - schema:
+      name: Schema matches expected structure
+      allow_extra_columns: true
+      allow_other_column_order: true
+  - row_count:
+      name: At least one provider record
+      threshold:
+        must_be_greater_than: 0
+  - failed_rows:
+      name: provider_id and clinic_id combination is always unique
+      query: |
+        SELECT provider_id, clinic_id, COUNT(*) FROM silver.stg_vet_provider
+        GROUP BY provider_id, clinic_id HAVING COUNT(*) > 1

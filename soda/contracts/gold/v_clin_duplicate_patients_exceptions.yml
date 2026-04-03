@@ -33,12 +33,8 @@ checks:
       allow_extra_columns: true
       allow_other_column_order: true
   - failed_rows:
-      name: No patient matched against itself
+      name: Data quality checks
       query: |
         SELECT * FROM gold.v_clin_duplicate_patients_exceptions
         WHERE patient_id_a = patient_id_b
-  - failed_rows:
-      name: match_reason is always a known value
-      query: |
-        SELECT * FROM gold.v_clin_duplicate_patients_exceptions
-        WHERE match_reason NOT IN ('same_name_species_dob', 'same_owner_phone')
+           OR match_reason NOT IN ('same_name_species_dob', 'same_owner_phone')

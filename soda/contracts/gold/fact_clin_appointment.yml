@@ -63,7 +63,6 @@ columns:
     data_type: timestamp
   - name: updated_at
     data_type: timestamp
-
 checks:
   - schema:
       name: Schema matches expected structure
@@ -74,14 +73,10 @@ checks:
       threshold:
         must_be_greater_than: 0
   - failed_rows:
-      name: Status is always a known value
+      name: Data quality checks
       query: |
         SELECT * FROM gold.fact_clin_appointment
         WHERE status NOT IN ('completed', 'cancelled', 'no_show', 'scheduled')
-  - failed_rows:
-      name: Status flags match status column
-      query: |
-        SELECT * FROM gold.fact_clin_appointment
-        WHERE (is_completed = TRUE AND status != 'completed')
+           OR (is_completed = TRUE AND status != 'completed')
            OR (is_cancelled = TRUE AND status != 'cancelled')
            OR (is_no_show  = TRUE AND status != 'no_show')
