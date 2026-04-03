@@ -1,30 +1,32 @@
-dataset: pawsfirst/gold/dim_core_clinic
+dataset: pawsfirst/gold/dim_clin_patient
 
 columns:
-  - name: clinic_sk
+  - name: patient_sk
     data_type: varchar
     checks:
       - missing:
-          name: clinic_sk is always populated
-  - name: clinic_id
+          name: patient_sk is always populated
+  - name: patient_id
     data_type: integer
     checks:
       - missing:
-          name: clinic_id is always populated
-  - name: clinic_name
+          name: patient_id is always populated
+  - name: patient_name
     data_type: varchar
-  - name: city
+  - name: species
     data_type: varchar
-  - name: state
+  - name: breed
     data_type: varchar
-  - name: area
-    data_type: varchar
-  - name: opened_date
+  - name: date_of_birth
     data_type: date
-  - name: closed_date
-    data_type: date
-  - name: renamed_to
+  - name: sex
     data_type: varchar
+  - name: clinic_id
+    data_type: integer
+  - name: insurance_provider
+    data_type: varchar
+  - name: is_active
+    data_type: boolean
   - name: effective_start
     data_type: timestamp
     checks:
@@ -39,9 +41,6 @@ columns:
           name: is_current is always populated
   - name: row_hash
     data_type: varchar
-    checks:
-      - missing:
-          name: row_hash is always populated
 
 checks:
   - schema:
@@ -49,21 +48,17 @@ checks:
       allow_extra_columns: true
       allow_other_column_order: true
   - row_count:
-      name: At least one clinic record
+      name: At least 2000 patient dimension rows
       threshold:
-        must_be_greater_than: 0
-  - name: clinic_sk
-    data_type: varchar
-    checks:
-      - missing:
-          name: clinic_sk is always populated
-      - duplicate:
-          name: clinic_sk is unique
+        must_be_greater_than_or_equal: 2000
   - failed_rows:
-      name: Each clinic has exactly one current row
-      fail_query: |
-        SELECT clinic_id, COUNT(*) AS cnt
-        FROM gold.dim_core_clinic
-        WHERE is_current = TRUE
-        GROUP BY clinic_id
-        HAVING COUNT(*) > 1
+      name: SCD2 integrity violations
+      query: |
+        SELECT 'duplicate surrogate key' AS reason, patient_sk::varchar AS id
+        FROM gold.dim_clin_patient
+        GROUP BY patient_sk HAVING COUNT(*) > 1
+        UNION ALL
+        SELECT 'invalid effective range' AS reason, patient_sk::varchar AS id
+        FROM gold.dim_clin_patient
+        WHERE effective_end IS NOT NULL
+          AND effective_end <= effective_start
