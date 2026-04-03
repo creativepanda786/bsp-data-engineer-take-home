@@ -153,6 +153,135 @@ CREATE TABLE IF NOT EXISTS gold.fact_pipe_referral_stage (
     updated_at            TIMESTAMP
 );
 
+
+-- ============================================================
+-- LOAD: DIMENSIONS (SCD2 initial load)
+-- ============================================================
+
+INSERT INTO gold.dim_core_clinic
+SELECT
+    gen_random_uuid() AS clinic_sk,
+    clinic_id, clinic_name, city, state, area, opened_date, closed_date, renamed_to,
+    CURRENT_TIMESTAMP AS effective_start,
+    NULL              AS effective_end,
+    TRUE              AS is_current,
+    md5(
+        COALESCE(clinic_name, '')  || COALESCE(city, '') || COALESCE(state, '') ||
+        COALESCE(area, '')         || COALESCE(renamed_to, '') ||
+        COALESCE(CAST(opened_date AS VARCHAR), '') ||
+        COALESCE(CAST(closed_date AS VARCHAR), '')
+    ) AS row_hash
+FROM silver.stg_vet_clinic
+WHERE NOT EXISTS (SELECT 1 FROM gold.dim_core_clinic);
+
+INSERT INTO gold.dim_clin_patient
+SELECT
+    gen_random_uuid() AS patient_sk,
+    patient_id, owner_id, patient_name, species, breed, date_of_birth, sex,
+    weight_lbs, clinic_id, insurance_provider,
+    CASE WHEN insurance_provider IS NOT NULL THEN TRUE ELSE FALSE END AS has_insurance,
+    registration_date AS registration_documented_date,
+    is_active,
+    CURRENT_TIMESTAMP AS effective_start,
+    NULL              AS effective_end,
+    TRUE              AS is_current,
+    md5(
+        COALESCE(patient_name, '') || COALESCE(species, '') || COALESCE(breed, '') ||
+        COALESCE(CAST(date_of_birth AS VARCHAR), '') || COALESCE(sex, '') ||
+        COALESCE(CAST(weight_lbs AS VARCHAR), '') || COALESCE(insurance_provider, '') ||
+        COALESCE(CAST(is_active AS VARCHAR), '')
+    ) AS row_hash
+FROM silver.stg_vet_patient
+WHERE NOT EXISTS (SELECT 1 FROM gold.dim_clin_patient);
+
+INSERT INTO gold.dim_clin_provider
+SELECT
+    gen_random_uuid() AS provider_sk,
+    provider_id, full_name, first_name, last_name, credentials, specialty, clinic_id,
+    hire_date, termination_date, is_active, is_currently_active,
+    CURRENT_TIMESTAMP AS effective_start,
+    NULL              AS effective_end,
+    TRUE              AS is_current,
+    md5(
+        COALESCE(full_name, '') || COALESCE(credentials, '') || COALESCE(specialty, '') ||
+        COALESCE(CAST(clinic_id AS VARCHAR), '') || COALESCE(CAST(is_active AS VARCHAR), '')
+    ) AS row_hash
+FROM silver.stg_vet_provider
+WHERE NOT EXISTS (SELECT 1 FROM gold.dim_clin_provider);
+
+-- ============================================================
+-- LOAD: REFERENCE TABLES
+-- ============================================================
+
+DELETE FROM gold.ref_core_budget_target;
+
+INSERT INTO gold.ref_core_budget_target
+SELECT clinic_id, clinic_name, clinic_area, year, month, budget_month_date,
+       target_revenue, target_appointments, target_new_patients
+FROM silver.stg_vet_budget_target;
+
+-- ============================================================
+-- LOAD: FACTS
+-- ============================================================
+
+DELETE FROM gold.fact_clin_appointment;
+
+INSERT INTO gold.fact_clin_appointment
+SELECT
+    gen_random_uuid()  AS appointment_sk,
+    a.appointment_id,
+    dp.patient_sk,  a.patient_id,
+    dpr.provider_sk, a.provider_id,
+    dc.clinic_sk,   a.clinic_id,
+    a.service_code, a.service_name, a.service_fee,
+    a.scheduled_at   AS appointment_scheduled_at,
+    a.appointment_date AS appointment_documented_date,
+    a.status, a.duration_minutes, a.is_completed, a.is_cancelled, a.is_no_show,
+    a.created_at, a.updated_at
+FROM silver.stg_vet_appointment a
+LEFT JOIN gold.dim_clin_patient  dp  ON a.patient_id  = dp.patient_id  AND dp.is_current  = TRUE
+LEFT JOIN gold.dim_clin_provider dpr ON a.provider_id = dpr.provider_id AND dpr.is_current = TRUE
+LEFT JOIN gold.dim_core_clinic   dc  ON a.clinic_id   = dc.clinic_id   AND dc.is_current  = TRUE;
+
+DELETE FROM gold.fact_fin_invoice;
+
+INSERT INTO gold.fact_fin_invoice
+SELECT
+    gen_random_uuid() AS invoice_sk,
+    i.invoice_id, i.appointment_id,
+    dp.patient_sk, i.patient_id,
+    dc.clinic_sk,  i.clinic_id,
+    i.service_code, i.amount, i.insurance_paid, i.patient_paid, i.payment_type,
+    i.invoice_documented_date, i.invoice_paid_date, i.status,
+    i.is_paid, i.is_outstanding, i.is_partial, i.has_insurance_payment,
+    i.collection_rate, i.created_at, i.updated_at
+FROM silver.stg_vet_invoice i
+LEFT JOIN gold.dim_clin_patient dp ON i.patient_id = dp.patient_id AND dp.is_current = TRUE
+LEFT JOIN gold.dim_core_clinic  dc ON i.clinic_id  = dc.clinic_id  AND dc.is_current = TRUE;
+
+DELETE FROM gold.fact_pipe_referral_stage;
+
+INSERT INTO gold.fact_pipe_referral_stage
+SELECT
+    gen_random_uuid() AS referral_stage_sk,
+    r.referral_id,
+    dp.patient_sk, r.patient_id,
+    dc.clinic_sk,  r.clinic_id,
+    r.referral_source, r.stage,
+    CASE r.stage
+        WHEN 'inquiry'      THEN 1
+        WHEN 'consultation' THEN 2
+        WHEN 'registered'   THEN 3
+        WHEN 'active'       THEN 4
+        WHEN 'churned'      THEN 5
+        ELSE 99
+    END AS stage_sort_order,
+    r.stage_entered_at, r.stage_exited_at, r.days_in_stage, r.is_invalid_transition,
+    r.created_at, r.updated_at
+FROM silver.stg_vet_referral r
+LEFT JOIN gold.dim_clin_patient dp ON r.patient_id = dp.patient_id AND dp.is_current = TRUE
+LEFT JOIN gold.dim_core_clinic  dc ON r.clinic_id  = dc.clinic_id  AND dc.is_current = TRUE;
+
 -- ============================================================
 -- ANALYTICAL VIEWS
 -- ============================================================

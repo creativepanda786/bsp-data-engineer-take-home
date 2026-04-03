@@ -24,7 +24,7 @@ columns:
     data_type: varchar
   - name: service_fee
     data_type: double
-  - name: appointment_documented_date
+  - name: appointment_date
     data_type: date
   - name: scheduled_at
     data_type: timestamp
